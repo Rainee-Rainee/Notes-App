@@ -6,6 +6,7 @@ const bodyParser = require('body-parser');
 require('dotenv').config();
 const PORT = process.env.PORT || 3000;
 const JWT_SECRET = process.env.JWT_SECRET;
+const mongoPassword = process.env.MONGOPASSWORD;
 
 //Next.JS config
 const next = require('next');
@@ -18,7 +19,7 @@ const server = express();
 
 //MongoDB config
 const {MongoClient, Db }= require('mongodb');
-uri = "mongodb+srv://rainee-rainee:Password1@cluster1.w4bgg7t.mongodb.net/?retryWrites=true&w=majority";
+uri = `mongodb+srv://rainee-rainee:${mongoPassword}@cluster1.w4bgg7t.mongodb.net/?retryWrites=true&w=majority`;
 client = new MongoClient(uri);
 
 usersCollection = client.db("notes-db").collection("users");
@@ -39,7 +40,7 @@ app.prepare().then(async () => {
   // Custom Express routes here
   // "/register"
   server.post("/register", async (req, res) => {
-    console.log("Post Request on \"/register\" \nRequest Body:\n", req.body);
+    console.log("Post Request on \"/register\" \n\nRequest Header:\n", `${JSON.stringify(req.headers)}`, "\n\nRequest Body:\n", req.body, "\n ");
     try {
       const password = req.body.password
       const hashedPassword = await bcrypt.hash(password, 10);
@@ -53,21 +54,25 @@ app.prepare().then(async () => {
       const usernamesFound = await usersCollection.find({username: newUser.username}).toArray();
       const usernamesFoundLength = usernamesFound.length;
       if ( usernamesFoundLength != 0 ){
-        throw new Error("Username already exists")
+        res.status(500).send("Username already exists"); // Don't change without also changing components/Form.js
+        throw new Error("Username already exists");
       }
       //Check if username is at least 3 characters or more
       const usernameWithinCharacters = (newUser.username.length >= 3) && (newUser.username.length <= 15);
       if (!usernameWithinCharacters){
+        res.status(500).send("Username not within 3 to 15 characters"); // Don't change without also changing components/Form.js
         throw new Error("Username not within 3 to 15 characters")
       }
       //Check if username only contain letters, numbers, hyphens, and underscores.
       const usernameOnlyContains = /^[a-zA-Z0-9_-]+$/.test(newUser.username);
       if (!usernameOnlyContains) {
+        res.status(500).send("Username can only contain letters, numbers, hyphens, and underscores");  // Don't change without also changing components/Form.js
         throw new Error("Username can only contain letters, numbers, hyphens, and underscores.");
       }
       //Check if password is between 5 to 32 characters
       const passwordWithinCharacters = (password.length >= 5) && (password.length <= 32)
       if (!passwordWithinCharacters) {
+        res.status(500).send("Password not within 5 to 32 characters"); // Don't change without also changing components/Form.js
         throw new Error("Password not within 5 to 32 characters");
       }
 
@@ -83,7 +88,7 @@ app.prepare().then(async () => {
       }
 
     } catch (err) {
-      console.log("Error:", err);
+      console.log("Error Encountered:\n", err);
       res.status(500).send(err);  
     }
   })
@@ -91,23 +96,30 @@ app.prepare().then(async () => {
   // "/login"
   server.post("/login", async (req, res) => {
     try {
-      console.log("Post Request on \"/login\" \nRequest Body:\n", req.body);
+      console.log("Post Request on \"/login\" \n\nRequest Header:\n", `${JSON.stringify(req.headers)}`, "\n\nRequest Body:\n", req.body, "\n ");
 
       // Validation
       // Check if user exists in db
       const user = await usersCollection.findOne({username: req.body.username});    
       if (!user) {
-        throw new Error ("User doesn't exist")
+        console.log("User does not exist.");
+        throw new Error ("User doesn't exist.");
       }
       // Check if password is correct
       const validPassword = await bcrypt.compare(req.body.password, user.password);
       if (!validPassword) {
-        throw new Error ("Password doesn't match")
+        console.log("Password does not match");
+        throw new Error ("Password doesn't match.");
       }
+
+      console.log("User verified. Returning Auth Token:");
       const token = jwt.sign({id: user._id}, JWT_SECRET);
-      res.header("auth-token", token).send(token);
+      console.log(token);
+      res.header({"auth-token": token}).send(token);
+      
 
     } catch (err) {
+      console.log("Error Encountered\n", err);
       res.status(500).send(err);
     }
   })
