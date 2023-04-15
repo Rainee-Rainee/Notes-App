@@ -25,6 +25,18 @@ client = new MongoClient(uri);
 usersCollection = client.db("notes-db").collection("users");
 
 app.prepare().then(async () => {
+
+  let stringTable = {
+    //Registration status variables
+    "USERNAME_EXISTS": "Username already exists",
+    "USERNAME_NOT_WITHIN": "Username not within 3 to 15 characters",
+    "USERNAME_CONTAINS_INVALID": "Username can only contain letters, numbers, hyphens, and underscores",
+    "PASSWORD_NOT_WITHIN": "Password not within 5 to 32 characters",
+    "REGISTRATION_SUCCESS": "User successfully registered",
+    "REGISTRATION_FAILED": "User registration failed",
+
+  };
+
   // Connecting with the app's database
   try {
     await client.connect();
@@ -54,25 +66,25 @@ app.prepare().then(async () => {
       const usernamesFound = await usersCollection.find({username: newUser.username}).toArray();
       const usernamesFoundLength = usernamesFound.length;
       if ( usernamesFoundLength != 0 ){
-        res.status(500).send("Username already exists"); // Don't change without also changing components/Form.js
+        res.status(500).send([stringTable, "USERNAME_EXISTS"]);
         throw new Error("Username already exists");
       }
       //Check if username is at least 3 characters or more
       const usernameWithinCharacters = (newUser.username.length >= 3) && (newUser.username.length <= 15);
       if (!usernameWithinCharacters){
-        res.status(500).send("Username not within 3 to 15 characters"); // Don't change without also changing components/Form.js
+        res.status(500).send([stringTable, "USERNAME_NOT_WITHIN"]);
         throw new Error("Username not within 3 to 15 characters")
       }
       //Check if username only contain letters, numbers, hyphens, and underscores.
       const usernameOnlyContains = /^[a-zA-Z0-9_-]+$/.test(newUser.username);
       if (!usernameOnlyContains) {
-        res.status(500).send("Username can only contain letters, numbers, hyphens, and underscores");  // Don't change without also changing components/Form.js
+        res.status(500).send([stringTable, "USERNAME_CONTAINS_INVALID"]);
         throw new Error("Username can only contain letters, numbers, hyphens, and underscores.");
       }
       //Check if password is between 5 to 32 characters
       const passwordWithinCharacters = (password.length >= 5) && (password.length <= 32)
       if (!passwordWithinCharacters) {
-        res.status(500).send("Password not within 5 to 32 characters"); // Don't change without also changing components/Form.js
+        res.status(500).send([stringTable, "PASSWORD_NOT_WITHIN"]);
         throw new Error("Password not within 5 to 32 characters");
       }
 
@@ -82,9 +94,9 @@ app.prepare().then(async () => {
       //Confirm registration success/failure
       console.log("Result:\n", result);
       if (result.acknowledged == true) {
-        res.status(201).send("User successfully registered");
+        res.status(201).send([stringTable, "SUCCESS"]);
       } else {
-        res.status(500).send("User registration failed");
+        res.status(500).send(stringTable, "FAILED");
       }
 
     } catch (err) {
@@ -102,7 +114,7 @@ app.prepare().then(async () => {
       // Check if user exists in db
       const user = await usersCollection.findOne({username: req.body.username});    
       if (!user) {
-        console.log("User does not exist.");
+        console.log("User doesn't exist");
         throw new Error ("User doesn't exist.");
       }
       // Check if password is correct

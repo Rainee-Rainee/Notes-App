@@ -11,6 +11,7 @@ const Form = ({ action }) => {
   const [usernameOnlyContains, setUsernameOnlyContains] = useState(true);
   const [passwordWithinCharacters, setPasswordWithinCharacters] = useState(true);
 
+
   const resetErrs = () => {
     setMatchingPassword(true);
     setInvalidCredentials(false);
@@ -48,36 +49,50 @@ const Form = ({ action }) => {
         body: JSON.stringify({ username, password }),
       });
       
-      const data = await response.text();
-      console.log(data);
+ 
+      let data;
+      let stringTable;
+      let status;
+      let token;
+      if (action === "register"){
+        data = await response.json();
+        stringTable = data[0];
+        status = data[1];
+        console.log([stringTable, status]);
+      }
+      if (action === "login"){
+        data = await response.text();
+        token = data;
+        console.log(token);
+      }
 
-      if (action === "login" && data != "{}") {
+
+      if (action === "login" && token != "{}") {
         resetErrs();
-        document.cookie = `auth-token=${data}; path=/;`;
-      } else if (action === "login" && data == "{}") {
+        document.cookie = `auth-token=${token}; path=/;`;
+        window.location.href = "/";
+      } else if (action === "login" && token == "{}") {
         resetErrs();
         setInvalidCredentials(true);
       }
 
-      if (action === "register" && data == "Username already exists") {
+      if (action === "register" && data[1] == "USERNAME_EXISTS") {
         resetErrs();
         setUsernameAlreadyExists(true);
-      } else if (action === "register" && data == "Username not within 3 to 15 characters") {
+      } else if (action === "register" && data[1] == "USERNAME_NOT_WITHIN") {
         resetErrs();
         setUsernameWithinCharacters(false);
-      } else if (action === "register" && data == "Username can only contain letters, numbers, hyphens, and underscores") {
+      } else if (action === "register" && data[1] == "USERNAME_NOT_WITHIN") {
         resetErrs();
         setUsernameOnlyContains(false);
-      } else if (action === "register" && data == "Password not within 5 to 32 characters") {
+      } else if (action === "register" && data[1] == "PASSWORD_NOT_WITHIN") {
         resetErrs();
         setPasswordWithinCharacters(false);
-      } else if (action === "register" && data == "User successfully registered") {
+      } else if (action === "register" && data[1] == "SUCCESS") {
         resetErrs();
+        window.location.href = "/";
       }
-
-
-
-      //window.location.href = "/";
+      
     } catch (err) {
       console.log(err);
     }
