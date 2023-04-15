@@ -1,11 +1,23 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useLayoutEffect } from 'react';
 import styles from '@/styles/note.module.scss';
 
 const Note = () => {
   const [textContent, setTextContent] = useState('');
   const [lastKeyPressed, setLastKeyPressed] = useState('');
-  const [popUpMenuStyle, setPopUpMenuStyle] = useState({ display: 'none' });
-
+  const [popUpMenuStyle, setPopUpMenuStyle] = useState({ visibility: 'hidden' });
+  const [menuDimensions, setMenuDimensions] = useState({ height: 0, width: 0 });
+  
+  const popUpMenuRef = useRef(null);
+  
+  useLayoutEffect(() => {
+    if (popUpMenuRef.current && popUpMenuStyle.visibility === 'visible') {
+      setMenuDimensions({
+        height: popUpMenuRef.current.offsetHeight,
+        width: popUpMenuRef.current.offsetWidth,
+      });
+    }
+  }, [popUpMenuStyle]);
+  
   const handleChange = (e) => {
     e.preventDefault();
     console.log("'e': " + e.target.value);
@@ -32,13 +44,17 @@ const Note = () => {
     const tempSpan = document.createElement("span");
     
     //Mirror the style of the textarea text
+    tempDiv.style.backgroundColor = "#ebf2ed";
+    tempDiv.style.font = getComputedStyle(textareaElement).font;
+    tempDiv.style.left = "0";
+    tempDiv.style.opacity = ".33";
     tempDiv.style.position = "absolute";
     tempDiv.style.top = "0";
-    tempDiv.style.left = "0";
-    tempDiv.style.whiteSpace = "pre-wrap";
-    tempDiv.style.wordWrap = "break-word";
-    tempDiv.style.font = getComputedStyle(textareaElement).font;
     tempDiv.style.visibility = "hidden"; //Hide it for the user
+    tempDiv.style.whiteSpace = "pre-wrap";
+    tempDiv.style.width = `${textareaElement.clientWidth}px`;
+    tempDiv.style.wordWrap = "break-word";
+    
     
     //Get the text up to the caret and set the matching text to the temporary div
     const textUpToPosition = textareaElement.value.substring(0, caretIndex);
@@ -57,15 +73,15 @@ const Note = () => {
 
     // Get the position values off of the span element
     const position = {
-      offsetTop: tempSpan.offsetTop,
-      offsetLeft: tempSpan.offsetLeft,
+      offsetTop: tempSpan.offsetTop + window.pageYOffset - textareaElement.scrollTop,
+      offsetLeft: tempSpan.offsetLeft + window.pageXOffset - textareaElement.scrollLeft,
       offsetHeight: tempSpan.offsetHeight,
       offsetWidth: tempSpan.offsetWidth
     };
     console.log(position);
   
-    //Remove the div and span when finished and return the position values
-    textareaElement.parentElement.removeChild(tempDiv);
+    //Remove the div and span and return the position values when finished
+    //textareaElement.parentElement.removeChild(tempDiv);
     return position;
   };
 
@@ -77,7 +93,7 @@ const Note = () => {
     const selectionEnd = e.target.selectionEnd;
   
     if (selectionStart === selectionEnd) {
-      setPopUpMenuStyle({ display: "none" });
+    setPopUpMenuStyle({ visibility: "hidden" });
       return;
     }
   
@@ -87,17 +103,49 @@ const Note = () => {
     const caretPosition = getCaretPosition(e.target, selectionStart);
     console.log("caretPosition: " + caretPosition);
 
+
     //Calculate popUpMenu position
-    const menuTop = textareaBoundingRect.top + caretPosition.offsetTop - 20;
-    const menuLeft = textareaBoundingRect.left + caretPosition.offsetLeft;
+    let menuTop;
+    let menuLeft;
+    let menuRight;
+    let menuHeight = menuDimensions.height;
+    let menuWidth = menuDimensions.width;
+    //If the caret position is offsetted by at least the menu's height away from the top of the textarea
+    //then that means there's room to render the menu above the caret position
+    if (caretPosition.offsetTop >= menuHeight){
+        //set the menuTop variable to render the menu above the caret position
+        menuTop = textareaBoundingRect.top + caretPosition.offsetTop - 30;
+    }
+    // else if caret position isn't offsetted by at least the menu's height away from the top of the textarea, 
+    // then that means there's no room to render the menu above the caret position without going outside of the textarea
+    else if (caretPosition.offsetTop < menuHeight){
+        // so set the menuTop variable to render the menu below the caret position instead
+        menuTop = textareaBoundingRect.top + caretPosition.offsetTop + 30;
+    } 
+    
+    // If the right side of the menu is outside the textarea
+    menuRight = textareaBoundingRect.left + caretPosition.offsetLeft + menuDimensions.width;
+    if (menuRight > textareaBoundingRect.right){
+        // then subtract by how much amount that the menu is outside the text area by before setting the left offset
+        const overflowDifference = menuRight - textareaBoundingRect.right
+        menuLeft = textareaBoundingRect.left + caretPosition.offsetLeft - overflowDifference;
+    } else {
+        // else set the left offset normally
+        menuLeft = textareaBoundingRect.left + caretPosition.offsetLeft;
+    }
+    
+    
   
     
     setPopUpMenuStyle({
-      display: "block",
-      position: "absolute",
-      top: `${menuTop}px`,
-      left: `${menuLeft}px`,
-    });
+        visibility: "visible",
+        position: "absolute",
+        top: `${menuTop}px`,
+        left: `${menuLeft}px`,
+      });
+
+
+
   };
 
   return (
@@ -110,9 +158,13 @@ const Note = () => {
         value={textContent}
       ></textarea>
       <div 
+        id = "popUpMenuID"
+        ref={popUpMenuRef}
         className={styles.popUpMenu} 
-        style={popUpMenuStyle}>
-        abc
+        style={popUpMenuStyle}
+        >
+            
+        abcdefsdjnkdflnsgpdvnd;vbpivbiewlafus:cjSdjkvlsdndkjasndadnvhdslbv
       </div>
     </div>
   );
