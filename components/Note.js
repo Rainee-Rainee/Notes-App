@@ -5,8 +5,11 @@ const Note = () => {
   const [textContent, setTextContent] = useState('');
   const [lastKeyPressed, setLastKeyPressed] = useState('');
   const [popUpMenuStyle, setPopUpMenuStyle] = useState({ visibility: 'hidden' });
+  const [leftestPopUpMenuItemStyle, setLeftestPopUpMenuItemStyle] = useState({borderTopLeftRadius: '8px', borderBottomLeftRadius: '8px'});
+  const [rightestPopUpMenuItemStyle, setRightestPopUpMenuItemStyle] = useState({borderTopRightRadius: '8px', borderBottomRightRadius: '8px'});
   const [menuDimensions, setMenuDimensions] = useState({ height: 0, width: 0 });
-  
+  const [noteArea, setNoteArea] = useState(null);
+
   const popUpMenuRef = useRef(null);
   
   useLayoutEffect(() => {
@@ -81,7 +84,7 @@ const Note = () => {
     console.log(position);
   
     //Remove the div and span and return the position values when finished
-    //textareaElement.parentElement.removeChild(tempDiv);
+    textareaElement.parentElement.removeChild(tempDiv);
     return position;
   };
 
@@ -89,6 +92,7 @@ const Note = () => {
   const handleSelect = (e) => {
     e.preventDefault();
     console.log("e.target: " + e.target);
+    setNoteArea(e.target);
     const selectionStart = e.target.selectionStart;
     const selectionEnd = e.target.selectionEnd;
   
@@ -97,12 +101,10 @@ const Note = () => {
       return;
     }
   
-    
     const textareaBoundingRect = e.target.getBoundingClientRect();
     console.log("textareaBoundingRect: " + textareaBoundingRect);
     const caretPosition = getCaretPosition(e.target, selectionStart);
     console.log("caretPosition: " + caretPosition);
-
 
     //Calculate popUpMenu position
     let menuTop;
@@ -134,19 +136,31 @@ const Note = () => {
         menuLeft = textareaBoundingRect.left + caretPosition.offsetLeft;
     }
     
-    
-  
-    
     setPopUpMenuStyle({
         visibility: "visible",
         position: "absolute",
         top: `${menuTop}px`,
         left: `${menuLeft}px`,
       });
-
-
-
   };
+
+  const handleBold = (e) => {
+    e.preventDefault();
+    const selectionStart = noteArea.selectionStart;
+    const selectionEnd = noteArea.selectionEnd;
+
+    if (selectionStart === selectionEnd) {
+        return;
+    }
+
+    const beforeSelectedText = textContent.slice(0, selectionStart);
+    const selectedText = textContent.slice(selectionStart, selectionEnd);
+    const afterSelectedText = textContent.slice(selectionEnd);
+
+    setTextContent(`${beforeSelectedText}<b>${selectedText}</b>${afterSelectedText}`);
+
+    
+  }
 
   return (
     <div className={styles.noteContainer}>
@@ -157,6 +171,7 @@ const Note = () => {
         onSelect={handleSelect}
         value={textContent}
       ></textarea>
+
       <div 
         id = "popUpMenuID"
         ref={popUpMenuRef}
@@ -164,8 +179,17 @@ const Note = () => {
         style={popUpMenuStyle}
         >
             
-        abcdefsdjnkdflnsgpdvnd;vbpivbiewlafus:cjSdjkvlsdndkjasndadnvhdslbv
+        <button className={styles.popUpMenuButton} 
+                style={leftestPopUpMenuItemStyle}
+                onclick={handleBold}
+                >
+                    <b>B</b>
+        </button>
+        <button className={styles.popUpMenuButton}><i>i</i></button>
+        <button className={styles.popUpMenuButton} style={rightestPopUpMenuItemStyle}><u>U</u></button>
       </div>
+
+      <div className={styles.preview} dangerouslySetInnerHTML={{ __html: textContent }}></div>  
     </div>
   );
 };

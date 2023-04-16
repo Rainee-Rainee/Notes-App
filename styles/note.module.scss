@@ -23,6 +23,36 @@
 
   .popUpMenu {
     background-color: white;
-    border: 1px solid black;
+    border: none;
+    height: 30px;
+    outline: none;
+    border-radius: 6px;
     position: absolute;
+  }
+
+  .popUpMenuButton {
+    border: none;
+    height: 100%;
+    outline: none;
+  }
+
+  .popUpMenuButton:hover {
+    background-color: #cccccc;
+    
+  }
+
+  .popUpMenuButton:active {
+    background-color: #bbbbbb;
+  }
+
+  .preview {
+    height: 100%; // Set the desired height
+    width: 100%; // Set the desired width
+    overflow-y: auto; // Enable vertical scrolling when needed
+    overflow-x: hidden; // Disable horizontal scrolling
+    resize: none; // If you want the div to be resizable, add this property
+    white-space: pre-wrap; // Preserve line breaks and whitespace
+    word-wrap: break-word; // Break words when they exceed the width of the container
+    border: 1px solid #ccc; // Add a border to the contentEditable div to make it look like a textarea
+    padding: 5px; // Add padding inside the contentEditable div
   }
